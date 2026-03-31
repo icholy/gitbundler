@@ -25,8 +25,17 @@ func LoadConfig(path string) (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("reading config: %w", err)
 	}
+	expanded, err := Expand(string(data), func(namespace, value string) (string, error) {
+		if namespace == "env" {
+			return os.Getenv(value), nil
+		}
+		return "", fmt.Errorf("unknown variable namespace: %s", namespace)
+	})
+	if err != nil {
+		return nil, fmt.Errorf("expanding variables: %w", err)
+	}
 	var cfg Config
-	if err := yaml.Unmarshal(data, &cfg); err != nil {
+	if err := yaml.Unmarshal([]byte(expanded), &cfg); err != nil {
 		return nil, fmt.Errorf("parsing config: %w", err)
 	}
 	if cfg.Addr == "" {
