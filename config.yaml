@@ -1,0 +1,6 @@
+data_dir: data
+addr: ":8080"
+repos:
+  - name: xagent
+    url: https://github.com/icholy/xagent.git
+    interval: 5m

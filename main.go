@@ -1,0 +1,61 @@
+package main
+
+import (
+	"context"
+	"flag"
+	"log/slog"
+	"net/http"
+	"os/signal"
+	"sync"
+	"syscall"
+)
+
+func main() {
+	configPath := flag.String("config", "config.yaml", "path to config file")
+	flag.Parse()
+
+	cfg, err := LoadConfig(*configPath)
+	if err != nil {
+		slog.Error("failed to load config", "err", err)
+		return
+	}
+
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	var wg sync.WaitGroup
+	for _, repo := range cfg.Repos {
+		b := &Bundler{
+			Name:     repo.Name,
+			URL:      repo.URL,
+			Interval: repo.Interval,
+			DataDir:  cfg.DataDir,
+		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := b.Run(ctx); err != nil {
+				slog.Error("bundler stopped", "name", b.Name, "err", err)
+			}
+		}()
+	}
+
+	srv := &http.Server{
+		Addr:    cfg.Addr,
+		Handler: &Server{DataDir: cfg.DataDir},
+	}
+
+	go func() {
+		<-ctx.Done()
+		srv.Shutdown(context.Background())
+	}()
+
+	slog.Info("listening", "addr", cfg.Addr)
+	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+		slog.Error("http server error", "err", err)
+		return
+	}
+
+	stop()
+	wg.Wait()
+}
