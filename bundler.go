@@ -32,41 +32,40 @@ func (b *Bundler) Run(ctx context.Context) error {
 	repoDir := b.RepoDir()
 	bundlePath := b.BundlePath()
 
-	// Initial clone if needed.
-	if _, err := os.Stat(repoDir); os.IsNotExist(err) {
-		slog.Info("cloning", "name", b.Name, "url", b.URL)
-		if err := b.gitClone(ctx, repoDir); err != nil {
-			return fmt.Errorf("initial clone: %w", err)
-		}
-		slog.Info("clone complete", "name", b.Name)
-	}
-
-	// Initial bundle.
-	slog.Info("bundling", "name", b.Name)
-	if err := b.createBundle(ctx, repoDir, bundlePath); err != nil {
-		return fmt.Errorf("initial bundle: %w", err)
-	}
-	slog.Info("bundle complete", "name", b.Name, "path", bundlePath)
-
 	ticker := time.NewTicker(b.Interval)
 	defer ticker.Stop()
 	for {
+		if err := b.sync(ctx, repoDir, bundlePath); err != nil {
+			slog.Error("sync failed", "name", b.Name, "err", err)
+		}
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-ticker.C:
-			slog.Info("fetching", "name", b.Name)
-			if err := b.gitFetch(ctx, repoDir); err != nil {
-				slog.Error("fetch failed", "name", b.Name, "err", err)
-				continue
-			}
-			if err := b.createBundle(ctx, repoDir, bundlePath); err != nil {
-				slog.Error("bundle failed", "name", b.Name, "err", err)
-			} else {
-				slog.Info("bundle complete", "name", b.Name)
-			}
 		}
 	}
+}
+
+func (b *Bundler) sync(ctx context.Context, repoDir, bundlePath string) error {
+	if _, err := os.Stat(repoDir); os.IsNotExist(err) {
+		slog.Info("cloning", "name", b.Name, "url", b.URL)
+		if err := b.gitClone(ctx, repoDir); err != nil {
+			return fmt.Errorf("clone: %w", err)
+		}
+		slog.Info("clone complete", "name", b.Name)
+	} else {
+		slog.Info("fetching", "name", b.Name)
+		if err := b.gitFetch(ctx, repoDir); err != nil {
+			return fmt.Errorf("fetch: %w", err)
+		}
+	}
+	slog.Info("bundling", "name", b.Name)
+	if err := b.createBundle(ctx, repoDir, bundlePath); err != nil {
+		return fmt.Errorf("bundle: %w", err)
+	}
+	slog.Info("bundle complete", "name", b.Name)
+	return nil
+}
 }
 
 func (b *Bundler) gitClone(ctx context.Context, repoDir string) error {
