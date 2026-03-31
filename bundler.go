@@ -32,8 +32,6 @@ func (b *Bundler) Run(ctx context.Context) error {
 	repoDir := b.RepoDir()
 	bundlePath := b.BundlePath()
 
-	ticker := time.NewTicker(b.Interval)
-	defer ticker.Stop()
 	for {
 		if err := b.sync(ctx, repoDir, bundlePath); err != nil {
 			slog.Error("sync failed", "name", b.Name, "err", err)
@@ -41,7 +39,7 @@ func (b *Bundler) Run(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case <-ticker.C:
+		case <-time.After(b.Interval):
 		}
 	}
 }
@@ -65,7 +63,6 @@ func (b *Bundler) sync(ctx context.Context, repoDir, bundlePath string) error {
 	}
 	slog.Info("bundle complete", "name", b.Name)
 	return nil
-}
 }
 
 func (b *Bundler) gitClone(ctx context.Context, repoDir string) error {
