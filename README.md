@@ -40,7 +40,7 @@ volumes:
 Clone using the bundle for the initial download:
 
 ```
-git clone --bundle-uri=http://localhost:8080/myrepo.bundle https://github.com/owner/repo.git
+git clone --bundle-uri=http://localhost:8080/name.bundle https://github.com/owner/repo.git
 ```
 
 ## Configuration
