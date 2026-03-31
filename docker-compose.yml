@@ -5,8 +5,8 @@ services:
       - "8080:8080"
     working_dir: /app
     volumes:
-      - ./config.yaml:/app/config.yaml:ro
-      - data:/app/data
+      - ./gitbundler.yaml:/app/gitbundler.yaml:ro
+      - gitbundler-data:/app/data
 
 volumes:
-  data:
+  gitbundler-data:

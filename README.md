@@ -4,7 +4,7 @@ A server that maintains up-to-date [git bundles](https://git-scm.com/docs/git-bu
 
 ## Usage
 
-Create a `config.yaml`:
+Create a `gitbundler.yaml`:
 
 ```yaml
 data_dir: data
@@ -30,11 +30,11 @@ services:
     environment:
       - GITHUB_TOKEN
     volumes:
-      - ./config.yaml:/app/config.yaml:ro
-      - data:/app/data
+      - ./gitbundler.yaml:/app/gitbundler.yaml:ro
+      - gitbundler-data:/app/data
 
 volumes:
-  data:
+  gitbundler-data:
 ```
 
 Clone using the bundle for the initial download:

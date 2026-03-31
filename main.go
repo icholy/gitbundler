@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	configPath := flag.String("config", "config.yaml", "path to config file")
+	configPath := flag.String("config", "gitbundler.yaml", "path to config file")
 	flag.Parse()
 
 	cfg, err := LoadConfig(*configPath)
