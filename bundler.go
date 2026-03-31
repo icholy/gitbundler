@@ -8,6 +8,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"time"
+
+	"golang.org/x/sync/semaphore"
 )
 
 type Bundler struct {
@@ -15,6 +17,7 @@ type Bundler struct {
 	URL      string
 	Interval time.Duration
 	DataDir  string
+	Sem      *semaphore.Weighted
 }
 
 // RepoDir returns the bare repo directory path.
@@ -45,6 +48,12 @@ func (b *Bundler) Run(ctx context.Context) error {
 }
 
 func (b *Bundler) sync(ctx context.Context, repoDir, bundlePath string) error {
+	if b.Sem != nil {
+		if err := b.Sem.Acquire(ctx, 1); err != nil {
+			return err
+		}
+		defer b.Sem.Release(1)
+	}
 	if _, err := os.Stat(repoDir); os.IsNotExist(err) {
 		slog.Info("cloning", "name", b.Name, "url", b.URL)
 		if err := b.gitClone(ctx, repoDir); err != nil {

@@ -9,9 +9,10 @@ import (
 )
 
 type Config struct {
-	DataDir string       `yaml:"data_dir"`
-	Addr    string       `yaml:"addr"`
-	Repos   []RepoConfig `yaml:"repos"`
+	DataDir        string       `yaml:"data_dir"`
+	Addr           string       `yaml:"addr"`
+	MaxConcurrent  int          `yaml:"max_concurrent"`
+	Repos          []RepoConfig `yaml:"repos"`
 }
 
 type RepoConfig struct {

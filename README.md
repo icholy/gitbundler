@@ -49,6 +49,7 @@ git clone --bundle-uri=http://localhost:8080/myrepo.bundle https://github.com/ow
 |-------|-------------|---------|
 | `data_dir` | Directory for clones and bundles | `data` |
 | `addr` | HTTP listen address | `:8080` |
+| `max_concurrent` | Max concurrent clone/fetch operations | unlimited |
 | `repos[].name` | Name used in the bundle URL | required |
 | `repos[].url` | Git remote URL | required |
 | `repos[].interval` | How often to fetch and re-bundle | `5m` |

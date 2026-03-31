@@ -8,6 +8,8 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+
+	"golang.org/x/sync/semaphore"
 )
 
 func main() {
@@ -23,6 +25,11 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
+	var sem *semaphore.Weighted
+	if cfg.MaxConcurrent > 0 {
+		sem = semaphore.NewWeighted(int64(cfg.MaxConcurrent))
+	}
+
 	var wg sync.WaitGroup
 	for _, repo := range cfg.Repos {
 		b := &Bundler{
@@ -30,6 +37,7 @@ func main() {
 			URL:      repo.URL,
 			Interval: repo.Interval,
 			DataDir:  cfg.DataDir,
+			Sem:      sem,
 		}
 		wg.Go(func() {
 			if err := b.Run(ctx); err != nil {
