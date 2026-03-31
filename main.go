@@ -31,13 +31,11 @@ func main() {
 			Interval: repo.Interval,
 			DataDir:  cfg.DataDir,
 		}
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			if err := b.Run(ctx); err != nil {
 				slog.Error("bundler stopped", "name", b.Name, "err", err)
 			}
-		}()
+		})
 	}
 
 	srv := &http.Server{
