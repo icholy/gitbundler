@@ -39,6 +39,7 @@ func main() {
 			Interval:   repo.Interval,
 			RepoPath:   filepath.Join(cfg.DataDir, repo.Name+".git"),
 			BundlePath: filepath.Join(cfg.DataDir, repo.Name+".bundle"),
+			Env:        repo.Env,
 			Sem:        sem,
 		}
 		wg.Go(func() {

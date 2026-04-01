@@ -17,9 +17,10 @@ type Config struct {
 }
 
 type RepoConfig struct {
-	Name     string        `yaml:"name"`
-	URL      string        `yaml:"url"`
-	Interval time.Duration `yaml:"interval"`
+	Name     string            `yaml:"name"`
+	URL      string            `yaml:"url"`
+	Interval time.Duration     `yaml:"interval"`
+	Env      map[string]string `yaml:"env"`
 }
 
 func LoadConfig(path string) (*Config, error) {

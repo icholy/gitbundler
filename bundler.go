@@ -19,6 +19,7 @@ type Bundler struct {
 	Interval   time.Duration
 	RepoPath   string
 	BundlePath string
+	Env        map[string]string
 	Sem        *semaphore.Weighted
 }
 
@@ -64,12 +65,22 @@ func (b *Bundler) sync(ctx context.Context) error {
 	return nil
 }
 
+// env returns extra environment variables for git commands.
+func (b *Bundler) env() []string {
+	env := os.Environ()
+	for k, v := range b.Env {
+		env = append(env, k+"="+v)
+	}
+	return env
+}
+
 // clone a bare repo
 func (b *Bundler) clone(ctx context.Context) error {
 	if err := os.MkdirAll(filepath.Dir(b.RepoPath), 0o755); err != nil {
 		return err
 	}
 	cmd := exec.CommandContext(ctx, "git", "clone", "--bare", b.URL, b.RepoPath)
+	cmd.Env = b.env()
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
@@ -78,6 +89,7 @@ func (b *Bundler) clone(ctx context.Context) error {
 // fetch updates for a repo
 func (b *Bundler) fetch(ctx context.Context) error {
 	cmd := exec.CommandContext(ctx, "git", "-C", b.RepoPath, "fetch", "--all")
+	cmd.Env = b.env()
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
