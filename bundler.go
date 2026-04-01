@@ -28,9 +28,9 @@ func (b *Bundler) Run(ctx context.Context) error {
 			slog.Error("sync failed", "name", b.Name, "err", err)
 		}
 		select {
+		case <-time.After(b.Interval):
 		case <-ctx.Done():
 			return ctx.Err()
-		case <-time.After(b.Interval):
 		}
 	}
 }
