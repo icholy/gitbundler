@@ -9,6 +9,7 @@ Create a `gitbundler.yaml`:
 ```yaml
 data_dir: data
 addr: ":8080"
+max_concurrent: 1
 repos:
   - name: myrepo
     url: https://github.com/owner/repo.git
@@ -16,6 +17,7 @@ repos:
   - name: private-repo
     url: https://x-access-token:${env:GITHUB_TOKEN}@github.com/org/private-repo.git
     interval: 10m
+    bundle_flags: ["master"]
 ```
 
 Add it to your `docker-compose.yml`:
