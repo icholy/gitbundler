@@ -28,7 +28,7 @@ services:
       - "8080:8080"
     working_dir: /app
     environment:
-      - GITHUB_TOKEN
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
     volumes:
       - ./gitbundler.yaml:/app/gitbundler.yaml:ro
       - gitbundler-data:/app/data
