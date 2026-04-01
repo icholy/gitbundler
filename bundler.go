@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -95,7 +96,9 @@ func (b *Bundler) bundle(ctx context.Context) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		os.Remove(tmpPath)
+		if removeErr := os.Remove(tmpPath); removeErr != nil {
+			return errors.Join(err, removeErr)
+		}
 		return err
 	}
 	return os.Rename(tmpPath, b.BundlePath)
