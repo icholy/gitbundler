@@ -34,17 +34,17 @@ func main() {
 	var wg sync.WaitGroup
 	for _, repo := range cfg.Repos {
 		b := &Bundler{
-			Name:       repo.Name,
-			URL:        repo.URL,
-			Interval:   repo.Interval,
-			RepoPath:   filepath.Join(cfg.DataDir, repo.Name+".git"),
-			BundlePath: filepath.Join(cfg.DataDir, repo.Name+".bundle"),
+			Name:        repo.Name,
+			URL:         repo.URL,
+			Interval:    repo.Interval,
+			RepoPath:    filepath.Join(cfg.DataDir, repo.Name+".git"),
+			BundlePath:  filepath.Join(cfg.DataDir, repo.Name+".bundle"),
 			Env:         repo.Env,
 			Repack:      repo.Repack,
 			CloneFlags:  repo.CloneFlags,
 			FetchFlags:  repo.FetchFlags,
 			BundleFlags: repo.BundleFlags,
-			Sem:        sem,
+			Sem:         sem,
 		}
 		wg.Go(func() {
 			if err := b.Run(ctx); err != nil {
