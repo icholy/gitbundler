@@ -7,17 +7,9 @@ A server that maintains up-to-date [git bundles](https://git-scm.com/docs/git-bu
 Create a `gitbundler.yaml`:
 
 ```yaml
-data_dir: data
-addr: ":8080"
-max_concurrent: 1
 repos:
   - name: myrepo
-    url: https://github.com/owner/repo.git
-    interval: 5m
-  - name: private-repo
-    url: https://x-access-token:${env:GITHUB_TOKEN}@github.com/org/private-repo.git
-    interval: 10m
-    bundle_flags: ["master"]
+    url: https://x-access-token:${env:GITHUB_TOKEN}@github.com/owner/repo.git
 ```
 
 Add it to your `docker-compose.yml`:
