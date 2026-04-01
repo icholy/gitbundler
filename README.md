@@ -53,5 +53,10 @@ git clone --bundle-uri=http://localhost:8080/myrepo.bundle https://github.com/ow
 | `repos[].name` | Name used in the bundle URL | required |
 | `repos[].url` | Git remote URL | required |
 | `repos[].interval` | How often to fetch and re-bundle | `5m` |
+| `repos[].env` | Extra environment variables for git commands | none |
+| `repos[].repack` | Run `git repack -adb` before bundling | `false` |
+| `repos[].clone_flags` | Extra flags passed to `git clone --bare` | none |
+| `repos[].fetch_flags` | Flags passed to `git fetch` | `["--all"]` |
+| `repos[].bundle_flags` | Flags passed to `git bundle create` | `["--all"]` |
 
 Environment variables can be referenced in the config using `${env:NAME}` syntax.
