@@ -57,6 +57,10 @@ func (b *Bundler) sync(ctx context.Context) error {
 			return fmt.Errorf("fetch: %w", err)
 		}
 	}
+	slog.Info("repacking", "name", b.Name)
+	if err := b.repack(ctx); err != nil {
+		return fmt.Errorf("repack: %w", err)
+	}
 	slog.Info("bundling", "name", b.Name)
 	if err := b.bundle(ctx); err != nil {
 		return fmt.Errorf("bundle: %w", err)
@@ -90,6 +94,14 @@ func (b *Bundler) clone(ctx context.Context) error {
 func (b *Bundler) fetch(ctx context.Context) error {
 	cmd := exec.CommandContext(ctx, "git", "-C", b.RepoPath, "fetch", "--all")
 	cmd.Env = b.env()
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+// repack optimizes the repo with bitmap indexes for faster client-side clones.
+func (b *Bundler) repack(ctx context.Context) error {
+	cmd := exec.CommandContext(ctx, "git", "-C", b.RepoPath, "repack", "-adb")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
