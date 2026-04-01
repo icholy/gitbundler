@@ -19,7 +19,10 @@ type Bundler struct {
 	Interval   time.Duration
 	RepoPath   string
 	BundlePath string
-	Env        map[string]string
+	Env         map[string]string
+	CloneFlags  []string
+	FetchFlags  []string
+	BundleFlags []string
 	Sem        *semaphore.Weighted
 }
 
@@ -83,7 +86,9 @@ func (b *Bundler) clone(ctx context.Context) error {
 	if err := os.MkdirAll(filepath.Dir(b.RepoPath), 0o755); err != nil {
 		return err
 	}
-	cmd := exec.CommandContext(ctx, "git", "clone", "--bare", b.URL, b.RepoPath)
+	args := append([]string{"clone", "--bare"}, b.CloneFlags...)
+	args = append(args, b.URL, b.RepoPath)
+	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Env = b.env()
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -92,7 +97,12 @@ func (b *Bundler) clone(ctx context.Context) error {
 
 // fetch updates for a repo
 func (b *Bundler) fetch(ctx context.Context) error {
-	cmd := exec.CommandContext(ctx, "git", "-C", b.RepoPath, "fetch", "--all")
+	flags := b.FetchFlags
+	if len(flags) == 0 {
+		flags = []string{"--all"}
+	}
+	args := append([]string{"-C", b.RepoPath, "fetch"}, flags...)
+	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Env = b.env()
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -116,7 +126,12 @@ func (b *Bundler) bundle(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	cmd := exec.CommandContext(ctx, "git", "-C", b.RepoPath, "bundle", "create", tmpPath, "--all")
+	flags := b.BundleFlags
+	if len(flags) == 0 {
+		flags = []string{"--all"}
+	}
+	args := append([]string{"-C", b.RepoPath, "bundle", "create", tmpPath}, flags...)
+	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {

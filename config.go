@@ -17,10 +17,13 @@ type Config struct {
 }
 
 type RepoConfig struct {
-	Name     string            `yaml:"name"`
-	URL      string            `yaml:"url"`
-	Interval time.Duration     `yaml:"interval"`
-	Env      map[string]string `yaml:"env"`
+	Name        string            `yaml:"name"`
+	URL         string            `yaml:"url"`
+	Interval    time.Duration     `yaml:"interval"`
+	Env         map[string]string `yaml:"env"`
+	CloneFlags  []string          `yaml:"clone_flags"`
+	FetchFlags  []string          `yaml:"fetch_flags"`
+	BundleFlags []string          `yaml:"bundle_flags"`
 }
 
 func LoadConfig(path string) (*Config, error) {

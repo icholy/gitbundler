@@ -39,7 +39,10 @@ func main() {
 			Interval:   repo.Interval,
 			RepoPath:   filepath.Join(cfg.DataDir, repo.Name+".git"),
 			BundlePath: filepath.Join(cfg.DataDir, repo.Name+".bundle"),
-			Env:        repo.Env,
+			Env:         repo.Env,
+			CloneFlags:  repo.CloneFlags,
+			FetchFlags:  repo.FetchFlags,
+			BundleFlags: repo.BundleFlags,
 			Sem:        sem,
 		}
 		wg.Go(func() {
