@@ -1,6 +1,6 @@
 # gitbundler
 
-A server that maintains up-to-date [git bundles](https://git-scm.com/docs/git-bundle) for a set of repositories and serves them over HTTP.
+A server that maintains up-to-date [git bundles](https://git-scm.com/docs/git-bundle) for a set of repositories and serves them over HTTP. Use it with `git clone --bundle-uri` to speed up cloning large repositories by bootstrapping from a pre-built bundle instead of fetching all objects from the remote.
 
 ## Usage
 
