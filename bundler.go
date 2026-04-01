@@ -16,17 +16,17 @@ import (
 )
 
 type Bundler struct {
-	Name       string
-	URL        string
-	Interval   time.Duration
-	RepoPath   string
-	BundlePath string
+	Name        string
+	URL         string
+	Interval    time.Duration
+	RepoPath    string
+	BundlePath  string
 	Env         map[string]string
 	Repack      bool
 	CloneFlags  []string
 	FetchFlags  []string
 	BundleFlags []string
-	Sem        *semaphore.Weighted
+	Sem         *semaphore.Weighted
 }
 
 // Run clones the repo (if needed), then loops fetching and re-bundling.
@@ -51,7 +51,11 @@ func (b *Bundler) sync(ctx context.Context) error {
 		}
 		defer b.Sem.Release(1)
 	}
-	if _, err := os.Stat(b.RepoPath); os.IsNotExist(err) {
+	hasRepo, err := b.exists(b.RepoPath)
+	if err != nil {
+		return err
+	}
+	if hasRepo {
 		slog.Info("cloning", "name", b.Name, "url", b.URL)
 		if err := b.clone(ctx); err != nil {
 			return fmt.Errorf("clone: %w", err)
@@ -71,8 +75,14 @@ func (b *Bundler) sync(ctx context.Context) error {
 			return fmt.Errorf("show-ref: %w", err)
 		}
 		if before == after {
-			slog.Info("no changes", "name", b.Name)
-			return nil
+			hasBundle, err := b.exists(b.BundlePath)
+			if err != nil {
+				return err
+			}
+			if hasBundle {
+				slog.Info("no changes", "name", b.Name)
+				return nil
+			}
 		}
 	}
 	if b.Repack {
@@ -87,6 +97,14 @@ func (b *Bundler) sync(ctx context.Context) error {
 	}
 	slog.Info("bundle complete", "name", b.Name)
 	return nil
+}
+
+func (*Bundler) exists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return err == nil, err
 }
 
 // env returns extra environment variables for git commands.
