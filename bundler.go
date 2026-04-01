@@ -47,6 +47,7 @@ func (b *Bundler) Run(ctx context.Context) error {
 	}
 }
 
+// sync pulls changes from the repo and updates the bundle
 func (b *Bundler) sync(ctx context.Context, repoDir, bundlePath string) error {
 	if b.Sem != nil {
 		if err := b.Sem.Acquire(ctx, 1); err != nil {
@@ -56,25 +57,26 @@ func (b *Bundler) sync(ctx context.Context, repoDir, bundlePath string) error {
 	}
 	if _, err := os.Stat(repoDir); os.IsNotExist(err) {
 		slog.Info("cloning", "name", b.Name, "url", b.URL)
-		if err := b.gitClone(ctx, repoDir); err != nil {
+		if err := b.clone(ctx, repoDir); err != nil {
 			return fmt.Errorf("clone: %w", err)
 		}
 		slog.Info("clone complete", "name", b.Name)
 	} else {
 		slog.Info("fetching", "name", b.Name)
-		if err := b.gitFetch(ctx, repoDir); err != nil {
+		if err := b.fetch(ctx, repoDir); err != nil {
 			return fmt.Errorf("fetch: %w", err)
 		}
 	}
 	slog.Info("bundling", "name", b.Name)
-	if err := b.createBundle(ctx, repoDir, bundlePath); err != nil {
+	if err := b.bundle(ctx, repoDir, bundlePath); err != nil {
 		return fmt.Errorf("bundle: %w", err)
 	}
 	slog.Info("bundle complete", "name", b.Name)
 	return nil
 }
 
-func (b *Bundler) gitClone(ctx context.Context, repoDir string) error {
+// clone a bare repo
+func (b *Bundler) clone(ctx context.Context, repoDir string) error {
 	if err := os.MkdirAll(filepath.Dir(repoDir), 0o755); err != nil {
 		return err
 	}
@@ -84,27 +86,29 @@ func (b *Bundler) gitClone(ctx context.Context, repoDir string) error {
 	return cmd.Run()
 }
 
-func (b *Bundler) gitFetch(ctx context.Context, repoDir string) error {
+// fetch updates for a repo
+func (b *Bundler) fetch(ctx context.Context, repoDir string) error {
 	cmd := exec.CommandContext(ctx, "git", "-C", repoDir, "fetch", "--all")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
 
-func (b *Bundler) createBundle(ctx context.Context, repoDir, bundlePath string) error {
+// bundle updates the git bundle in the data directory
+func (b *Bundler) bundle(ctx context.Context, repoDir, bundlePath string) error {
 	if err := os.MkdirAll(filepath.Dir(bundlePath), 0o755); err != nil {
 		return err
 	}
-	tmpFile, err := filepath.Abs(bundlePath + ".tmp")
+	tmpPath, err := filepath.Abs(bundlePath + ".tmp")
 	if err != nil {
 		return err
 	}
-	cmd := exec.CommandContext(ctx, "git", "-C", repoDir, "bundle", "create", tmpFile, "--all")
+	cmd := exec.CommandContext(ctx, "git", "-C", repoDir, "bundle", "create", tmpPath, "--all")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		os.Remove(tmpFile)
+		os.Remove(tmpPath)
 		return err
 	}
-	return os.Rename(tmpFile, bundlePath)
+	return os.Rename(tmpPath, bundlePath)
 }
