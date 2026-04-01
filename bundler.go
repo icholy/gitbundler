@@ -20,6 +20,7 @@ type Bundler struct {
 	RepoPath   string
 	BundlePath string
 	Env         map[string]string
+	Repack      bool
 	CloneFlags  []string
 	FetchFlags  []string
 	BundleFlags []string
@@ -60,9 +61,11 @@ func (b *Bundler) sync(ctx context.Context) error {
 			return fmt.Errorf("fetch: %w", err)
 		}
 	}
-	slog.Info("repacking", "name", b.Name)
-	if err := b.repack(ctx); err != nil {
-		return fmt.Errorf("repack: %w", err)
+	if b.Repack {
+		slog.Info("repacking", "name", b.Name)
+		if err := b.repack(ctx); err != nil {
+			return fmt.Errorf("repack: %w", err)
+		}
 	}
 	slog.Info("bundling", "name", b.Name)
 	if err := b.bundle(ctx); err != nil {

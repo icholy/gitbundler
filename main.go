@@ -40,6 +40,7 @@ func main() {
 			RepoPath:   filepath.Join(cfg.DataDir, repo.Name+".git"),
 			BundlePath: filepath.Join(cfg.DataDir, repo.Name+".bundle"),
 			Env:         repo.Env,
+			Repack:      repo.Repack,
 			CloneFlags:  repo.CloneFlags,
 			FetchFlags:  repo.FetchFlags,
 			BundleFlags: repo.BundleFlags,

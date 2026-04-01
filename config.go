@@ -21,6 +21,7 @@ type RepoConfig struct {
 	URL         string            `yaml:"url"`
 	Interval    time.Duration     `yaml:"interval"`
 	Env         map[string]string `yaml:"env"`
+	Repack      bool              `yaml:"repack"`
 	CloneFlags  []string          `yaml:"clone_flags"`
 	FetchFlags  []string          `yaml:"fetch_flags"`
 	BundleFlags []string          `yaml:"bundle_flags"`
