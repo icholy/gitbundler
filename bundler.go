@@ -55,7 +55,7 @@ func (b *Bundler) sync(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if hasRepo {
+	if !hasRepo {
 		slog.Info("cloning", "name", b.Name, "url", b.URL)
 		if err := b.clone(ctx); err != nil {
 			return fmt.Errorf("clone: %w", err)
