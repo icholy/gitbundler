@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -56,9 +58,21 @@ func (b *Bundler) sync(ctx context.Context) error {
 		}
 		slog.Info("clone complete", "name", b.Name)
 	} else {
+		before, err := b.refhash(ctx)
+		if err != nil {
+			return fmt.Errorf("show-ref: %w", err)
+		}
 		slog.Info("fetching", "name", b.Name)
 		if err := b.fetch(ctx); err != nil {
 			return fmt.Errorf("fetch: %w", err)
+		}
+		after, err := b.refhash(ctx)
+		if err != nil {
+			return fmt.Errorf("show-ref: %w", err)
+		}
+		if before == after {
+			slog.Info("no changes", "name", b.Name)
+			return nil
 		}
 	}
 	if b.Repack {
@@ -110,6 +124,18 @@ func (b *Bundler) fetch(ctx context.Context) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
+}
+
+// refHash returns a hash of all refs in the repo for change detection.
+func (b *Bundler) refhash(ctx context.Context) (string, error) {
+	cmd := exec.CommandContext(ctx, "git", "-C", b.RepoPath, "show-ref")
+	h := sha256.New()
+	cmd.Stdout = h
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
 // repack optimizes the repo with bitmap indexes for faster client-side clones.
