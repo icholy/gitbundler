@@ -3,16 +3,17 @@ package main
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"time"
 
 	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
-	DataDir        string       `yaml:"data_dir"`
-	Addr           string       `yaml:"addr"`
-	MaxConcurrent  int          `yaml:"max_concurrent"`
-	Repos          []RepoConfig `yaml:"repos"`
+	DataDir       string       `yaml:"data_dir"`
+	Addr          string       `yaml:"addr"`
+	MaxConcurrent int          `yaml:"max_concurrent"`
+	Repos         []RepoConfig `yaml:"repos"`
 }
 
 type RepoConfig struct {
@@ -57,4 +58,25 @@ func LoadConfig(path string) (*Config, error) {
 		}
 	}
 	return &cfg, nil
+}
+
+var expandPattern = regexp.MustCompile(`\$\{([^:}]+):([^}]+)\}`)
+
+// Expand replaces ${namespace:value} patterns in the input string
+// using the provided replace function.
+func Expand(input string, replace func(namespace, value string) (string, error)) (string, error) {
+	var lastErr error
+	result := expandPattern.ReplaceAllStringFunc(input, func(match string) string {
+		parts := expandPattern.FindStringSubmatch(match)
+		if len(parts) != 3 {
+			return match
+		}
+		expanded, err := replace(parts[1], parts[2])
+		if err != nil {
+			lastErr = err
+			return match
+		}
+		return expanded
+	})
+	return result, lastErr
 }
