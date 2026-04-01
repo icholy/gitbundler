@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os/signal"
+	"path/filepath"
 	"sync"
 	"syscall"
 
@@ -33,11 +34,12 @@ func main() {
 	var wg sync.WaitGroup
 	for _, repo := range cfg.Repos {
 		b := &Bundler{
-			Name:     repo.Name,
-			URL:      repo.URL,
-			Interval: repo.Interval,
-			DataDir:  cfg.DataDir,
-			Sem:      sem,
+			Name:       repo.Name,
+			URL:        repo.URL,
+			Interval:   repo.Interval,
+			RepoPath:   filepath.Join(cfg.DataDir, repo.Name+".git"),
+			BundlePath: filepath.Join(cfg.DataDir, repo.Name+".bundle"),
+			Sem:        sem,
 		}
 		wg.Go(func() {
 			if err := b.Run(ctx); err != nil {
