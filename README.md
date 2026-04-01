@@ -46,7 +46,7 @@ git clone --bundle-uri=http://localhost:8080/myrepo.bundle https://github.com/ow
 | `max_concurrent` | Max concurrent clone/fetch operations | unlimited |
 | `repos[].name` | Name used in the bundle URL | required |
 | `repos[].url` | Git remote URL | required |
-| `repos[].interval` | How often to fetch and re-bundle | `5m` |
+| `repos[].interval` | How often to fetch and re-bundle | `15m` |
 | `repos[].env` | Extra environment variables for git commands | none |
 | `repos[].repack` | Run `git repack -adb` before bundling | `false` |
 | `repos[].clone_flags` | Extra flags passed to `git clone --bare` | none |

@@ -59,7 +59,7 @@ func LoadConfig(path string) (*Config, error) {
 			return nil, fmt.Errorf("repo at index %d has no url", i)
 		}
 		if repo.Interval == 0 {
-			cfg.Repos[i].Interval = 5 * time.Minute
+			cfg.Repos[i].Interval = 15 * time.Minute
 		}
 	}
 	return &cfg, nil
