@@ -10,10 +10,24 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"syscall"
 	"time"
 
 	"golang.org/x/sync/semaphore"
 )
+
+// git builds a git command whose entire process group is killed when ctx is
+// cancelled, so subprocesses (e.g. git-remote-https, index-pack) don't get
+// orphaned and reparented to PID 1.
+func (b *Bundler) git(ctx context.Context, args ...string) *exec.Cmd {
+	cmd := exec.CommandContext(ctx, "git", args...)
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	cmd.Cancel = func() error {
+		return syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+	}
+	cmd.WaitDelay = 10 * time.Second
+	return cmd
+}
 
 type Bundler struct {
 	Name        string
@@ -123,7 +137,7 @@ func (b *Bundler) clone(ctx context.Context) error {
 	}
 	args := append([]string{"clone", "--bare"}, b.CloneFlags...)
 	args = append(args, b.URL, b.RepoPath)
-	cmd := exec.CommandContext(ctx, "git", args...)
+	cmd := b.git(ctx, args...)
 	cmd.Env = b.env()
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -137,7 +151,7 @@ func (b *Bundler) fetch(ctx context.Context) error {
 		flags = []string{"--all"}
 	}
 	args := append([]string{"-C", b.RepoPath, "fetch"}, flags...)
-	cmd := exec.CommandContext(ctx, "git", args...)
+	cmd := b.git(ctx, args...)
 	cmd.Env = b.env()
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -146,7 +160,7 @@ func (b *Bundler) fetch(ctx context.Context) error {
 
 // refHash returns a hash of all refs in the repo for change detection.
 func (b *Bundler) refhash(ctx context.Context) (string, error) {
-	cmd := exec.CommandContext(ctx, "git", "-C", b.RepoPath, "show-ref")
+	cmd := b.git(ctx, "-C", b.RepoPath, "show-ref")
 	h := sha256.New()
 	cmd.Stdout = h
 	cmd.Stderr = os.Stderr
@@ -158,7 +172,7 @@ func (b *Bundler) refhash(ctx context.Context) (string, error) {
 
 // repack optimizes the repo with bitmap indexes for faster client-side clones.
 func (b *Bundler) repack(ctx context.Context) error {
-	cmd := exec.CommandContext(ctx, "git", "-C", b.RepoPath, "repack", "-adb")
+	cmd := b.git(ctx, "-C", b.RepoPath, "repack", "-adb")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
@@ -178,7 +192,7 @@ func (b *Bundler) bundle(ctx context.Context) error {
 		flags = []string{"--all"}
 	}
 	args := append([]string{"-C", b.RepoPath, "bundle", "create", tmpPath}, flags...)
-	cmd := exec.CommandContext(ctx, "git", args...)
+	cmd := b.git(ctx, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
