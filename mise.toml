@@ -3,3 +3,15 @@ pin=true
 
 [tools]
 go = "1.26.3"
+"github:caarlos0/svu" = "3.4.1"
+
+[tasks.release]
+description = "Bump the version (major|minor|patch|next) and push the tag to trigger a release"
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+version="$(svu {{arg(name='bump', default='patch')}})"
+git tag -a "$version" -m "$version"
+git push origin "$version"
+echo "pushed $version"
+"""
