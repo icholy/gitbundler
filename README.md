@@ -50,7 +50,9 @@ git clone --bundle-uri=http://localhost:8080/myrepo.bundle https://github.com/ow
 | `repos[].env` | Extra environment variables for git commands | none |
 | `repos[].repack` | Run `git repack -adb` before bundling | `false` |
 | `repos[].clone_flags` | Extra flags passed to `git clone --bare` | none |
-| `repos[].fetch_flags` | Flags passed to `git fetch` | `["--all"]` |
+| `repos[].fetch_flags` | Flags passed to `git fetch` | `["--prune"]` |
 | `repos[].bundle_flags` | Flags passed to `git bundle create` | `["--all"]` |
 
 Environment variables can be referenced in the config using `${env:NAME}` syntax.
+
+Each bare repo is configured with a `+refs/heads/*:refs/heads/*` fetch refspec (set only when unset) so that `git fetch` advances `refs/heads/*` and the bundle keeps tracking upstream. Without it, a bare clone fetches into `FETCH_HEAD` only and the served bundle freezes at the initial clone.

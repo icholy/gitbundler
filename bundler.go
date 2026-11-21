@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -144,11 +145,43 @@ func (b *Bundler) clone(ctx context.Context) error {
 	return cmd.Run()
 }
 
+// defaultRefspec mirrors only branch heads into the bare repo. A bare clone
+// configures no remote.origin.fetch refspec, so `git fetch` would only write
+// FETCH_HEAD and never advance refs/heads/*, freezing the bundle at the
+// initial clone state. Restricting to refs/heads/* (rather than --mirror's
+// refs/*) keeps refs/pull/* and friends out of the store so `bundle --all`
+// stays lean.
+const defaultRefspec = "+refs/heads/*:refs/heads/*"
+
+// ensureRefspec configures remote.origin.fetch when it is unset. Setting it
+// only when unset self-heals repos cloned before this fix on their next fetch,
+// and leaves an explicit refspec (e.g. from a --mirror clone) untouched.
+func (b *Bundler) ensureRefspec(ctx context.Context) error {
+	get := b.git(ctx, "-C", b.RepoPath, "config", "--get", "remote.origin.fetch")
+	get.Env = b.env()
+	out, err := get.Output()
+	if err == nil && len(strings.TrimSpace(string(out))) > 0 {
+		return nil
+	}
+	// `git config --get` exits 1 for a missing key; any other error is fatal.
+	var exitErr *exec.ExitError
+	if err != nil && !errors.As(err, &exitErr) {
+		return err
+	}
+	set := b.git(ctx, "-C", b.RepoPath, "config", "remote.origin.fetch", defaultRefspec)
+	set.Env = b.env()
+	set.Stderr = os.Stderr
+	return set.Run()
+}
+
 // fetch updates for a repo
 func (b *Bundler) fetch(ctx context.Context) error {
+	if err := b.ensureRefspec(ctx); err != nil {
+		return fmt.Errorf("ensure refspec: %w", err)
+	}
 	flags := b.FetchFlags
 	if len(flags) == 0 {
-		flags = []string{"--all"}
+		flags = []string{"--prune"}
 	}
 	args := append([]string{"-C", b.RepoPath, "fetch"}, flags...)
 	cmd := b.git(ctx, args...)
